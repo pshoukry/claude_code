@@ -156,6 +156,28 @@ defmodule ClaudeCode.CLI.Parser do
 
   def parse_message(_), do: {:error, :missing_type}
 
+  # Error reasons that denote an unrecognized-but-harmless message from a newer
+  # CLI (a message/system/event type the SDK does not model yet). These are
+  # skipped for forward compatibility rather than treated as failures.
+  @forward_compatible_error_tags [
+    :unknown_message_type,
+    :unknown_system_subtype,
+    :unknown_event_type
+  ]
+
+  @doc """
+  Returns true when `reason` denotes an unrecognized-but-forward-compatible
+  message from a newer CLI (a new message, system-message, or event type the
+  SDK does not model yet).
+
+  Callers that parse a single streamed message (rather than a batch) can use
+  this to skip such messages quietly instead of logging a parse failure — the
+  same forward-compatibility `parse_messages/1` already applies to batches.
+  """
+  @spec skippable_error?(term()) :: boolean()
+  def skippable_error?({tag, _detail}) when tag in @forward_compatible_error_tags, do: true
+  def skippable_error?(_), do: false
+
   @doc """
   Parses a list of decoded JSON maps into message structs.
 
@@ -164,11 +186,7 @@ defmodule ClaudeCode.CLI.Parser do
   """
   @spec parse_messages(list(map())) :: {:ok, [ClaudeCode.Message.t() | struct()]} | {:error, term()}
   def parse_messages(messages) when is_list(messages) do
-    reduce_parsed(messages, &parse_message/1, [
-      :unknown_message_type,
-      :unknown_system_subtype,
-      :unknown_event_type
-    ])
+    reduce_parsed(messages, &parse_message/1, @forward_compatible_error_tags)
   end
 
   @doc """

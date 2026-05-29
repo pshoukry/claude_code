@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Streamed unknown CLI messages no longer logged as parse failures** — When a newer CLI emits a system-message subtype (e.g. `thinking_tokens`), message type, or event type the SDK does not model yet, the single-message streaming path in `ClaudeCode.Session.Server` logged a `warning` for each one. It now skips them quietly at `debug` level, matching the forward-compatibility `ClaudeCode.CLI.Parser.parse_messages/1` already applies to batches. Adds `ClaudeCode.CLI.Parser.skippable_error?/1` to classify these forward-compatible errors.
+
 ## [0.36.3] - 2026-03-30 | CC 2.1.76
 
 ### Fixed

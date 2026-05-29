@@ -395,6 +395,18 @@ defmodule ClaudeCode.CLI.ParserTest do
       assert {:error, {:unknown_system_subtype, "some_future_subtype"}} = Parser.parse_message(data)
     end
 
+    test "classifies unknown message/system/event errors as forward-compatible skippable" do
+      assert Parser.skippable_error?({:unknown_system_subtype, "thinking_tokens"})
+      assert Parser.skippable_error?({:unknown_message_type, "some_future_type"})
+      assert Parser.skippable_error?({:unknown_event_type, "some_future_event"})
+    end
+
+    test "does not classify real parse failures as skippable" do
+      refute Parser.skippable_error?(:missing_type)
+      refute Parser.skippable_error?(:invalid_system_subtype)
+      refute Parser.skippable_error?({:parse_error, 0, :boom})
+    end
+
     test "parses rate_limit_event messages" do
       data = %{
         "type" => "rate_limit_event",

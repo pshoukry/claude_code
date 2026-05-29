@@ -252,7 +252,15 @@ defmodule ClaudeCode.Session.Server do
         {:noreply, state}
 
       {:error, reason} ->
-        Logger.warning("Failed to parse raw message: #{inspect(reason)}")
+        if Parser.skippable_error?(reason) do
+          # Forward compatibility: a newer CLI emitted a message/system/event
+          # type this SDK version does not model yet. Skip it quietly rather
+          # than logging a parse failure for every such message.
+          Logger.debug("Skipping unrecognized CLI message: #{inspect(reason)}")
+        else
+          Logger.warning("Failed to parse raw message: #{inspect(reason)}")
+        end
+
         {:noreply, state}
     end
   end
